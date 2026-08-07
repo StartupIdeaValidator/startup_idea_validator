@@ -1,12 +1,12 @@
 from langchain.messages import SystemMessage
-from ..model import model_with_tools
+from ..model import model
 
 
 
 def llm_call(state:dict):
     
     return {
-        "messages" : [model_with_tools.invoke(
+        "messages" : [model.invoke(
           [
               SystemMessage(
                   content = "you are a professional Idea validator who can understand a startup idea"
