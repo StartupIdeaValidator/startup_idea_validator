@@ -1,30 +1,20 @@
 from langchain.chat_models import init_chat_model
 from tools.agent_tools import *
 from langgraph.graph import StateGraph, START, END
-from .state.messages_state import MessagesState
-from .nodes.model_node import *
-from .nodes.tool_node import *
+
+from .state.agent_state import AgentState
 
 
-def should_continue(state: MessagesState):
-    """Decide if we should continue the loop or stop based upon whether the LLM made a tool call"""
-
-    messages = state["messages"]
-    last_message = messages[-1]
-
-    # If the LLM makes a tool call, then perform an action
-    if last_message.tool_calls:
-        return "tool_node"
-
-    # Otherwise, we stop (reply to the user)
-    return END
-
+from .nodes.tool_node import tool_node
+from .nodes.analyse import analyse
+from .nodes.research import research
+from .nodes.understand import understand_idea
+from .nodes.generate import generate
 
 
 base_model = init_chat_model(
     "gpt-4o-mini",
 )
-
 
 tools = [ask_for_clarifications,
          find_competitors,
@@ -39,27 +29,34 @@ tools = [ask_for_clarifications,
          gen_business_model]
 
 tools_by_name = [tool.name for tool in tools]
-
 model = base_model.bind_tools(tools_by_name)
 
 
+def should_continue():
+    ...
 
-agent_builder = StateGraph(MessagesState)
+agent_builder = StateGraph(AgentState)
 
 
 agent_builder.add_node(tool_node)
-agent_builder.add_node(llm_call)
+agent_builder.add_node(understand_idea)
+agent_builder.add_node(research)
+agent_builder.add_node(analyse)
+agent_builder.add_node(generate)
 
 
-agent_builder.add_conditional_edges(START,"llm_call")
+agent_builder.add_conditional_edges(START,"understand_idea")
 
 agent_builder.add_conditional_edges(
-    "llm_call",
+    "understand_idea",
     should_continue,
-    ["tool_node",END]
-)
+    ["tool_node","research"])
 
-agent_builder.add_node("tool_node","llm_call")
+agent_builder.add_edge("understand_idea","research")
+agent_builder.add_edge("research","analyse")
+agent_builder.add_edge("tool_node","llm_call")
+
+agent_builder.add_conditional_edges(END,"generate")
 
 
 agent = agent_builder.compile()
