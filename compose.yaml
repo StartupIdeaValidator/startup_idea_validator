@@ -4,8 +4,7 @@ services:
     ports:
       - 5432:5432
     env_file:
-      - .env.db-root-creds
-      - .env.db-key-value
+      - ./backend/.env
     volumes:
       - type: bind
         source: ./db-config/mongo-init.js

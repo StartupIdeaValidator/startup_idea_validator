@@ -1,6 +1,10 @@
 from langchain.chat_models import init_chat_model
 from tools.agent_tools import *
 from langgraph.graph import StateGraph, START, END
+import os
+api_key = os.getenv("OPENAI_API_KEY")
+
+
 
 from .state.agent_state import AgentState
 
@@ -11,9 +15,13 @@ from .nodes.research import research
 from .nodes.understand import understand_idea
 from .nodes.generate import generate
 
+from .controllers.ctrls import *
+
 
 base_model = init_chat_model(
-    "gpt-4o-mini",
+    model="gpt-4o-mini",
+    model_provider='openai',
+    api_key=api_key
 )
 
 tools = [ask_for_clarifications,
@@ -38,25 +46,34 @@ def should_continue():
 agent_builder = StateGraph(AgentState)
 
 
-agent_builder.add_node(tool_node)
-agent_builder.add_node(understand_idea)
-agent_builder.add_node(research)
-agent_builder.add_node(analyse)
-agent_builder.add_node(generate)
+agent_builder.add_node("tool_node",tool_node)
+agent_builder.add_node("understand_idea",understand_idea)
+agent_builder.add_node("research",research)
+agent_builder.add_node("analyse",analyse)
+agent_builder.add_node("generate",generate)
 
 
-agent_builder.add_conditional_edges(START,"understand_idea")
+agent_builder.add_edge(START,"understand_idea")
 
 agent_builder.add_conditional_edges(
     "understand_idea",
-    should_continue,
-    ["tool_node","research"])
+    step_after_understand,
+    ["tool_node","research"]
+    )
 
-agent_builder.add_edge("understand_idea","research")
-agent_builder.add_edge("research","analyse")
-agent_builder.add_edge("tool_node","llm_call")
+agent_builder.add_edge(
+    "research",
+    "tool_node"
+    )
 
-agent_builder.add_conditional_edges(END,"generate")
+
+agent_builder.add_conditional_edges(
+    "tool_node",
+    route_after_tools,
+    ["research","analyse","generate"]
+)
+
+agent_builder.add_edge(END,"generate")
 
 
 agent = agent_builder.compile()
