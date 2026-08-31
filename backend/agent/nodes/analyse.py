@@ -1,6 +1,0 @@
-
-
-
-
-def analyse(state):
-    ...
