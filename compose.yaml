@@ -1,17 +1,19 @@
 services:
   db:
-    image: mongodb/mongodb-community-server:7.0-ubuntu2204
+    image: postgres:16-alpine
     ports:
-      - 5432:5432
-    env_file:
-      - ./backend/.env
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: db_user
+      POSTGRES_PASSWORD: db_password
+      POSTGRES_DB: startup_validator
     volumes:
-      - type: bind
-        source: ./db-config/mongo-init.js
-        target: /docker-entrypoint-initdb.d/mongo-init.js
-        read_only: true
-      - type: volume
-        source: mongodb-data
-        target: /data/db
+      - volume-data:/var/lib/postgresql/data
     networks:
-      - key-value-net
+      - my-network
+
+volumes:
+  volume-data:
+
+networks:
+  my-network:
