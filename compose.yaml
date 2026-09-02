@@ -1,14 +1,41 @@
 services:
   db:
     image: postgres:16-alpine
+    container_name: validator_db
     ports:
       - "5432:5432"
     environment:
       POSTGRES_USER: db_user
-      POSTGRES_PASSWORD: db_password
+      POSTGRES_PASSWORD: secret123
       POSTGRES_DB: startup_validator
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U db_user -d startup_validator"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     volumes:
       - volume-data:/var/lib/postgresql/data
+    networks:
+      - my-network
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: validator_api
+    ports:
+      - "8000:8000"
+    environment:
+      POSTGRES_USER: db_user
+      POSTGRES_PASSWORD: secret123
+      POSTGRES_DB: startup_validator
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+    env_file:
+      - ./backend/.env
+    depends_on:
+      db:
+        condition: service_healthy
     networks:
       - my-network
 

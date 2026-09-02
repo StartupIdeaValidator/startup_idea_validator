@@ -1,31 +1,37 @@
-from sqlalchemy import MetaData, Table ,Column , Integer , String , ForeignKey
-from .config import engine
+from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy.orm import DeclarativeBase, relationship
 
-metadata_obj = MetaData()
+class Base(DeclarativeBase):
+    pass
 
-user_table = Table(
-    "users",
-    metadata_obj,
-    Column("id" , Integer , primary_key=True),
-    Column("email" , String ,nullable=False),
-    Column("password" , String ,nullable=False),
-)
+metadata_obj = Base.metadata
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, nullable=False, unique=True)
+    password = Column(String, nullable=False)
+
+    ideas = relationship("Idea", back_populates="owner", cascade="all, delete-orphan")
+
+class Idea(Base):
+    __tablename__ = "idea"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    startup_name = Column(String, nullable=False)
+    description = Column(String, nullable=False)
+    problem = Column(String, nullable=True)
+    target_customer = Column(String, nullable=False)
+    competitors = Column(String, nullable=True)
+    stage = Column(String, nullable=False)
+    industry = Column(String, nullable=False)
+    geography = Column(String, nullable=False)
+    assumptions = Column(String, nullable=True)
+
+    owner = relationship("User", back_populates="ideas")
 
 
-idea_table = Table(
-    "idea",
-    metadata_obj,
-    Column("id" , Integer , primary_key=True),
-    Column("user_id" ,ForeignKey("user_table.id") , nullable=False),
-    Column("startup_name" , String, nullable=False),
-    Column("description" , String, nullable=False),
-    Column("problem" , String),
-    Column("target_customer" , String, nullable=False),
-    Column("competitors" , String),
-    Column("stage" , String , nullable=False),
-    Column("industry" , String, nullable=False),
-    Column("geography" , String, nullable=False),
-    Column("assumptions" , String),
-)
-
-metadata_obj.create_all()
+user_table = User.__table__
+idea_table = Idea.__table__
