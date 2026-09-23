@@ -1,17 +1,24 @@
 
 from langchain_core.messages import AnyMessage
+from pydantic import BaseModel
 from typing_extensions import Annotated ,TypedDict
 import operator
+from pydantic import BaseModel
 
 
-class State():
+class IdeaHypothesis(BaseModel):
+    problem : str
+    solution : str
+    value_proposition : str
+    target_customer : str
+    geography : str
+    business_model : str
+    industry : str
+
+class State(TypedDict):
     
     messages : Annotated[list[AnyMessage] , operator.add]
-    llm_calls : int 
+    llm_calls : int = 0 
     
     
-    problem : list[str]
-    solution : list[str] 
-    target_customers : list[str]
-    geography : list[str]
-    business_model : str
+    hypothesis : IdeaHypothesis 

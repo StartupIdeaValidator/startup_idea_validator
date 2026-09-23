@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 
 # Load environment variables
-load_dotenv(override=True)
+load_dotenv()
 
 def get_database_url() -> str:
     """Construct or retrieve the PostgreSQL database connection URL."""
